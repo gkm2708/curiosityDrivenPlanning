@@ -16,9 +16,15 @@
 MCV - Marginal Curiosity Vector
 
 Top Left - MCV for agents current position
+
 Top Middle - Forward Direction Mask at previous position
+
 Top Right - Backward Direction Mask at current position
 
+
+
 Bottom Left - Blank
+
 Bottom Middle - Overall MCV until the step
+
 Bottom Right - Maze and agent's current status
