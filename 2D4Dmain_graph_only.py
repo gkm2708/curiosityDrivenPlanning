@@ -4,6 +4,7 @@ import random
 import os
 import time
 import cv2
+import math
 np.set_printoptions(threshold=np.inf)
 
 """ ###################### VERTEX ####################"""
@@ -74,7 +75,7 @@ class Graph:
             self.add_vertex(to, to_mat)
 
         self.vert_dict[frm].add_neighbor(self.vert_dict[to], cost)
-        self.vert_dict[to].add_neighbor(self.vert_dict[frm], cost)
+        #self.vert_dict[to].add_neighbor(self.vert_dict[frm], cost)
 
     def get_vertices(self):
         return self.vert_dict.keys()
@@ -89,6 +90,7 @@ class Graph:
                 #print('( %s , %s, %3d)'  % ( vid, wid, v.get_weight(w)))
                 print('( %s , %s, %s)'  % ( vid, wid, v.get_weight(w)))
         #"""
+
         """
         for v in g:
             print('g.vert_dict[%s]=%s' %(v.get_id(), g.vert_dict[v.get_id()]))
@@ -120,7 +122,7 @@ class Graph:
             imageMCV[x][y] = 255
 
         #temp = [[0 if item == 0 else 255 for item in row] for row in grid]
-        imageGridFull = np.concatenate([imageMCV, [[0 if item == 0 else 255 for item in row] for row in grid] ], axis=1)
+        imageGridFull = np.concatenate([imageMCV, [[0 if item == 0 else 255 for item in row] for row in grid]], axis=1)
 
         for i in range(0, imageGridFull.shape[0]):
             for ii in range(0, 7):
@@ -128,7 +130,37 @@ class Graph:
                     for jj in range(0, 7):
                         imageExpanded[i * 7 + ii][j * 7 + jj] = imageGridFull[i][j]
 
-        cv2.imwrite("curiosity_map.png", imageExpanded)
+        cv2.imwrite("2d/curiosity_map.png", imageExpanded)
+
+
+    def plotTrajectory(self, trajectory, t):
+
+        imageMCV = np.asarray([[0 if item == 0 else 255 for item in row] for row in grid])
+        imageExpanded = np.zeros((realgrid*7,realgrid*7))
+
+
+        for v in trajectory:
+
+            vid = v.split(",")
+
+            vidx = vid[0].split("(")
+            vidy = vid[1].split(")")
+
+            x = int(vidx[1])
+            y = int(vidy[0])
+
+            imageMCV[x][y] = 100
+
+        imageMCV[agent_x][agent_y] = 200
+        imageMCV[goal_x][goal_y] = 50
+
+        for i in range(0, imageMCV.shape[0]):
+            for ii in range(0, 7):
+                for j in range(0, imageMCV.shape[1]):
+                    for jj in range(0, 7):
+                        imageExpanded[i * 7 + ii][j * 7 + jj] = imageMCV[i][j]
+
+        cv2.imwrite("2d/trajectory_map_"+str(t)+".png", imageExpanded)
 
 
 def randomValidPoint(grid_type):
@@ -257,7 +289,9 @@ previous_x, previous_y = 0, 0
 next_x, next_y = 0, 0
 bDirection = np.zeros((realgrid, realgrid))
 fDirection = np.zeros((realgrid, realgrid))
+reachability = np.zeros((5, 5))
 traversal_status = {}
+graph = {}
 
 boundarySwitch = False
 fDirectionSwitch = False
@@ -266,23 +300,72 @@ bDirectionSwitch = False
 """    
 """
 
+
+def floodfill(x, y):
+
+    global reachability
+
+    #"hidden" stop clause - not reinvoking for "c" or "b", only for "a".
+    if reachability[x][y] == 1:
+        reachability[x][y] = 2
+        #recursively invoke flood fill on all surrounding cells:
+        if x > 0:
+            floodfill(x-1,y)
+        if x < len(reachability[y]) - 1:
+            floodfill(x+1,y)
+        if y > 0:
+            floodfill(x,y-1)
+        if y < len(reachability) - 1:
+            floodfill(x,y+1)
+
+
+
+
 def initializeMCV2D(point_x, point_y):
 
     global traversal_status
     global boundarySwitch
+    global reachability
 
     # add this point as vertex
     vertex = "(" + str(point_x) + "," + str(point_y) + ")"
+
+    print(point_x, point_y)
+
     # hardcoded reachability discovery from grid
-    reachability = grid[point_x-2:point_x+3, point_y-2:point_y+3]
+    #print("Before \n",reachability)
+
+    reachability = np.zeros((5, 5))
+    #print("Before \n",reachability)
+
+
+    tempGrid = np.empty_like(grid)
+    tempGrid[:] = grid
+
+    reachability = np.asarray(tempGrid[point_x-2:point_x+3, point_y-2:point_y+3])
+    #print("Before \n",reachability)
+    #print("Before \n", grid)
+
+    floodfill(2, 2)
+    #print("After \n",reachability)
+
+    reachability = np.asarray([[1 if item == 2 else 0 for item in row] for row in reachability])
+
+    #print("After \n",reachability)
+
+
     # Initialize MCV
     tempMCV = initMCV * reachability
+    print(tempMCV)
     # mask boundary
     if boundarySwitch:
         tempMCV = tempMCV * boundarymask
+    print(tempMCV)
     # add vertex and set traversal status
     g.add_vertex(vertex, tempMCV)
     traversal_status[vertex] = "Remaining"
+
+
 
 """    
 """
@@ -395,7 +478,7 @@ def plan2D():
                 vidy = vid[1].split(")")
                 next_x = int(vidx[1])
                 next_y = int(vidy[0])
-                print("found non zero action at ", v, " action is ", next_x+move_x-2, next_y+move_y-2)
+                #print("found non zero action at ", v, " action is ", next_x+move_x-2, next_y+move_y-2)
                 break
         if findStatus:
             break
@@ -475,7 +558,7 @@ def buildGraph(max_steps):
             vertex_previous = "(" + str(previous_x) + "," + str(previous_y) + ")"
             g.add_edge(vertex_previous, g.get_vertex_mcv(vertex_previous), vertex_agent, g.get_vertex_mcv(vertex_agent), 1)
 
-    g.printGraph()
+    #g.printGraph()
 
 
 
@@ -483,38 +566,100 @@ def buildGraph(max_steps):
 
 
 
+def initial_graph():
+
+    global graph
+
+    for v in g:
+        temp = {}
+        vid = v.get_id()
+        for w in v.get_connections():
+            wid = w.get_id()
+            temp[wid] = v.get_weight(w)
+        graph[vid] = temp
 
 
 
 def planTrajectory():
 
     global traversal_status
-    global move_x
-    global move_y
-    global next_x
-    global next_y
+    global agent_x
+    global agent_y
+    global previous_x
+    global previous_y
+    global graph
 
-    findStatus = False
+    path = {}
+    adj_node = {}
+    queue = []
+    trajectory = []
 
-    for v in traversal_status:
-        if traversal_status[v] == "Remaining":
-            findStatus = findaction(v)
-            if findStatus:
-                vertex = g.get_vertex(v)
-                vid = vertex.get_id()
-                vid = vid.split(",")
-                vidx = vid[0].split("(")
-                vidy = vid[1].split(")")
-                next_x = int(vidx[1])
-                next_y = int(vidy[0])
-                print("found non zero action at ", v, " action is ", next_x+move_x-2, next_y+move_y-2)
-                break
-        if findStatus:
+    keys = graph.keys()
+    #print("KEYS\n", keys)
+
+    startDistanceMin = 100
+    goalDistanceMin = 100
+    initial = ''
+    x = ''
+
+    # find nearest neighbour to the start and goal position
+    for key in keys:
+        temp = key.split(",")
+        temp_x = temp[0].split("(")
+        key_x = int(temp_x[1])
+        temp_y = temp[1].split(")")
+        key_y = int(temp_y[0])
+
+        startDistance = math.sqrt((agent_x-key_x)*(agent_x-key_x) + (agent_y-key_y)*(agent_y-key_y))
+        goalDistance = math.sqrt((goal_x-key_x)*(goal_x-key_x) + (goal_y-key_y)*(goal_y-key_y))
+
+        if startDistance < startDistanceMin:
+            # set it as initial
+            initial = key
+            startDistanceMin = startDistance
+        if goalDistance < goalDistanceMin:
+            # set it as terminal
+            x = key
+            goalDistanceMin = goalDistance
+
+    print("initial point ", initial, startDistanceMin, " goal point ", x, goalDistanceMin)
+
+
+    for node in graph:
+        path[node] = float("inf")
+        adj_node[node] = None
+        queue.append(node)
+
+    path[initial] = 0
+
+    while queue:
+        # find min distance which wasn't marked as current
+        key_min = queue[0]
+        min_val = path[key_min]
+        for n in range(1, len(queue)):
+            if path[queue[n]] < min_val:
+                key_min = queue[n]
+                min_val = path[key_min]
+        cur = key_min
+        queue.remove(cur)
+        #print(cur)
+
+        for i in graph[cur]:
+            alternate = graph[cur][i] + path[cur]
+            if path[i] > alternate:
+                path[i] = alternate
+                adj_node[i] = cur
+
+    trajectory.append("("+str(goal_x)+","+str(goal_y)+")")
+    trajectory.append(x)
+    while True:
+        x = adj_node[x]
+        if x is None:
+            trajectory.append("("+str(agent_x)+","+str(agent_y)+")")
             break
-    if not findStatus:
-        print("finished building graph")
-        return True
-    return False
+        trajectory.append(x)
+
+    return trajectory
 
 
 
@@ -522,7 +667,7 @@ def planTrajectory():
 
 if __name__ == '__main__':
 
-    max_episode = 1
+    max_episode = 1000
     max_steps = 1000
 
     # ###################################################################################
@@ -530,7 +675,7 @@ if __name__ == '__main__':
     # ###################################################################################
     # enable below for boundary mask
     # needed one time, afterwards in update inner values are zero, so nothing matters
-    boundarySwitch = True
+    boundarySwitch = False
 
     # enable below to update (Raise) MCV for previous position in the direction of movement
     fDirectionSwitch = True
@@ -540,9 +685,9 @@ if __name__ == '__main__':
 
 
 
-    #agent_x, agent_y = randomValidPoint("FullGrid")
-    agent_x, agent_y = 2,2
-    goal_x, goal_y = randomValidPoint("SmallGrid")
+    agent_x, agent_y = randomValidPoint("FullGrid")
+    #agent_x, agent_y = 2,2
+    #goal_x, goal_y = randomValidPoint("SmallGrid")
 
     # set history at initilisation
     previous_x, previous_y = agent_x, agent_y
@@ -550,19 +695,15 @@ if __name__ == '__main__':
     # return when goal is found or 1000 steps
     buildGraph(max_steps)
     g.plotGraph()
-    g.printGraph()
+    #g.printGraph()
 
 
+    initial_graph()
 
+    print("GRAPH\n", graph)
 
 
     for t in trange(0, max_episode):
-        if dimensionCount == 2:
-            if not os.path.exists("2d/"+str(t)):
-                os.makedirs("2d/"+str(t))
-        elif dimensionCount == 4:
-            if not os.path.exists("4d/"+str(t)):
-                os.makedirs("4d/"+str(t))
 
         agent_x, agent_y = randomValidPoint("FullGrid")
         goal_x, goal_y = randomValidPoint("FullGrid")
@@ -572,3 +713,7 @@ if __name__ == '__main__':
 
         # return when goal is found or 1000 steps
         trajectory = planTrajectory()
+        print("The path between ", "(" + str(agent_x) + "," + str(agent_y) + ")", " to ",
+              "(" + str(goal_x) + "," + str(goal_y) + ")", trajectory)
+        #print(trajectory)
+        g.plotTrajectory(trajectory, t)
