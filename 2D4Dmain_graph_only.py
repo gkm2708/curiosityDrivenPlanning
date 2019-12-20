@@ -10,16 +10,12 @@ np.set_printoptions(threshold=np.inf)
 
 class Vertex:
     def __init__(self, node, mat):
-        #print("Creating Vertex \n", mat)
         self.id = node
         self.mcv = mat
         self.adjacent = {}
 
     def __str__(self):
         return str(self.id) + ' adjacent: ' + str([x.id for x in self.adjacent])
-
-    def get_adjacent(self):
-        return [x.id for x in self.adjacent]
 
     def add_neighbor(self, neighbor, weight=0):
         self.adjacent[neighbor] = weight
@@ -31,11 +27,9 @@ class Vertex:
         return self.id
 
     def get_mcv(self):
-        #print("While getting \n",self.mcv)
         return self.mcv
 
     def set_mcv(self, tempMCV):
-        #print("While setting \n",tempMCV)
         self.mcv = tempMCV
 
     def get_weight(self, neighbor):
@@ -53,7 +47,6 @@ class Graph:
         return iter(self.vert_dict.values())
 
     def add_vertex(self, node, mat):
-        #print("Inside add vertex \n", mat)
         self.num_vertices = self.num_vertices + 1
         new_vertex = Vertex(node, mat)
         self.vert_dict[node] = new_vertex
@@ -67,7 +60,6 @@ class Graph:
 
     def get_vertex_mcv(self, n):
         if n in self.vert_dict:
-            #print("get vertex mcv \n", self.vert_dict[n].get_mcv())
             return self.vert_dict[n].get_mcv()
         else:
             return None
@@ -89,39 +81,30 @@ class Graph:
 
     def printGraph(self):
 
-        """
+        #"""
         for v in g:
             for w in v.get_connections():
                 vid = v.get_id()
                 wid = w.get_id()
                 #print('( %s , %s, %3d)'  % ( vid, wid, v.get_weight(w)))
                 print('( %s , %s, %s)'  % ( vid, wid, v.get_weight(w)))
-
-        """
-
         #"""
+        """
         for v in g:
             print('g.vert_dict[%s]=%s' %(v.get_id(), g.vert_dict[v.get_id()]))
-        #"""
-
+        """
         """
         for v in g:
             vid = v.get_id()
             print('( %s , \n%s)' % (vid, v.get_mcv()))
         """
 
-    def plotMap2D(self, t, step, bDirection, fDirection):
+    def plotGraph(self):
 
-        global imageMCV
         imageMCV = np.zeros((realgrid,realgrid))
-        imageMCVFull = np.zeros((realgrid,realgrid))
-        #imageGrid = np.zeros((realgrid,realgrid))
-        pointMCV = np.zeros((realgrid,realgrid))
+        imageGridFull = np.zeros((realgrid*2,realgrid*2))
 
-        imageExpanded = np.zeros((realgrid*7*3, realgrid*7*3))
-
-        # part 3 : Full MCV Map
-        # part 1 : Episode MCV Map
+        imageExpanded = np.zeros((realgrid*7,realgrid*2*7))
 
         for v in g:
 
@@ -129,92 +112,39 @@ class Graph:
             vid = vid.split(",")
 
             vidx = vid[0].split("(")
+            vidy = vid[1].split(")")
 
-            if dimensionCount == 2:
-                vidy = vid[1].split(")")
-            elif dimensionCount == 4:
-                vidy = vid[1]
+            x = int(vidx[1])
+            y = int(vidy[0])
 
-            currentPointMCV = v.get_mcv()
+            imageMCV[x][y] = 255
 
-            begin_x = int(vidx[1])-2
-            end_x = int(vidx[1])+3
+        #temp = [[0 if item == 0 else 255 for item in row] for row in grid]
+        imageGridFull = np.concatenate([imageMCV, [[0 if item == 0 else 255 for item in row] for row in grid] ], axis=1)
 
-            if dimensionCount == 2:
-                begin_y = int(vidy[0])-2
-                end_y = int(vidy[0])+3
-            elif dimensionCount == 4:
-                begin_y = int(vidy)-2
-                end_y = int(vidy)+3
-                temp_goal_x = vid[2]
-                temp_temp_goal_y = vid[3].split(")")
-                temp_goal_y = temp_temp_goal_y[0]
-
-            for i in range(begin_x, end_x):
-                for j in range(begin_y, end_y):
-                    if dimensionCount == 4 and int(temp_goal_x) == int(goal_x) and int(temp_goal_y) == int(goal_y):
-                        imageMCV[i, j] = imageMCV[i, j] + currentPointMCV[i-begin_x, j-begin_y]
-                    imageMCVFull[i, j] = imageMCVFull[i, j] + currentPointMCV[i-begin_x, j-begin_y]
-
-        if dimensionCount == 4:
-            x, y = np.unravel_index(imageMCV.argmax(), imageMCV.shape)
-            imageMCV = imageMCV*255/imageMCV[x][y]
-
-        x, y = np.unravel_index(imageMCVFull.argmax(), imageMCVFull.shape)
-        imageMCVFull = imageMCVFull*255/imageMCVFull[x][y]
-
-        # part 4 : Full Grid Map
-
-        imageGrid = [[0 if item == 0 else 255 for item in row] for row in grid]
-        imageGrid[previous_x][previous_y] = 200
-        imageGrid[agent_x][agent_y] = 150
-        imageGrid[goal_x][goal_y] = 100
-
-        # part 2 : Instantaneous MCV Map
-        if dimensionCount == 2:
-            vertex = "("+str(agent_x)+","+str(agent_y)+")"
-        elif dimensionCount == 4:
-            vertex = "("+str(agent_x)+","+str(agent_y)+","+str(goal_x)+","+str(goal_y)+")"
-
-        tempMCV = g.get_vertex_mcv(vertex)
-
-        unique = np.unique(tempMCV, return_counts=True)
-
-        multiplier = 255 / unique[0].shape[0]
-
-        for i in range(0, 5):
-            for j in range(0, 5):
-                for k in range(0, unique[0].shape[0]):
-                    if tempMCV[i][j] == unique[0][k]:
-                        tempMCV[i][j] = k*multiplier
-
-        pointMCV[agent_x-2:agent_x+3,agent_y-2:agent_y+3] = tempMCV
-
-        bDirection = [[0 if item == 0 else 255 if item == 1 else 200 for item in row] for row in bDirection]
-        fDirection = [[0 if item == 0 else 200 if item == 1 else 255 for item in row] for row in fDirection]
-
-        imageFull = np.concatenate(
-                    [np.concatenate([pointMCV, fDirection, bDirection], axis=1),
-                    np.concatenate([imageMCV, imageMCVFull, imageGrid], axis=1)],
-                    axis=0)
-
-        for i in range(0, imageFull.shape[0]):
+        for i in range(0, imageGridFull.shape[0]):
             for ii in range(0, 7):
-                for j in range(0, imageFull.shape[1]):
+                for j in range(0, imageGridFull.shape[1]):
                     for jj in range(0, 7):
-                        imageExpanded[i * 7 + ii][j * 7 + jj] = imageFull[i][j]
+                        imageExpanded[i * 7 + ii][j * 7 + jj] = imageGridFull[i][j]
 
-        if dimensionCount == 2:
-            cv2.imwrite("2d/"+str(t)+"/curiosity_map_"+str(t)+"_"+str(step)+".png", imageExpanded)
-        if dimensionCount == 4:
-            cv2.imwrite("4d/"+str(t)+"/curiosity_map_"+str(t)+"_"+str(step)+".png", imageExpanded)
+        cv2.imwrite("curiosity_map.png", imageExpanded)
 
 
+def randomValidPoint(grid_type):
 
+    if grid_type == "SmallGrid":
+        x, y = 0, 0
+        while smallGrid[x][y] == 0:
+            x = random.randint(1, realgrid - 2)
+            y = random.randint(1, realgrid - 2)
+    elif grid_type == "FullGrid":
+        x, y = 0, 0
+        while grid[x][y] == 0:
+            x = random.randint(1, realgrid - 2)
+            y = random.randint(1, realgrid - 2)
 
-
-
-
+    return x, y
 
 
 
@@ -226,6 +156,7 @@ class Graph:
 g = Graph()
 
 # initialize grid
+"""
 grid = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                 [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                 [0,0,1,0,0,1,0,0,1,1,1,1,0,0],
@@ -238,6 +169,24 @@ grid = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                 [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
                 [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
                 [0,0,1,1,1,1,0,0,1,0,0,1,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
+"""
+
+
+
+grid = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,1,1,1,1,1,1,1,1,1,1,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,0,0,1,0,0,0,0,1,0,0,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,1,1,1,1,1,1,1,1,1,1,0,0],
                 [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                 [0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
 
@@ -305,90 +254,169 @@ agent_x, agent_y = 0, 0
 move_x, move_y = 0, 0
 goal_x, goal_y = 0, 0
 previous_x, previous_y = 0, 0
+next_x, next_y = 0, 0
 bDirection = np.zeros((realgrid, realgrid))
 fDirection = np.zeros((realgrid, realgrid))
+traversal_status = {}
 
 boundarySwitch = False
 fDirectionSwitch = False
 bDirectionSwitch = False
-dimensionCount = 2
-
-
-
-
-
-
-
-
-
-
-
-
 
 """    
 """
 
+def initializeMCV2D(point_x, point_y):
 
-def randomValidPoint(grid_type):
+    global traversal_status
+    global boundarySwitch
 
-    if grid_type == "SmallGrid":
-        x, y = 0, 0
-        while smallGrid[x][y] == 0:
-            x = random.randint(1, realgrid - 2)
-            y = random.randint(1, realgrid - 2)
-    elif grid_type == "FullGrid":
-        x, y = 0, 0
-        while grid[x][y] == 0:
-            x = random.randint(1, realgrid - 2)
-            y = random.randint(1, realgrid - 2)
-
-    return x, y
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    # add this point as vertex
+    vertex = "(" + str(point_x) + "," + str(point_y) + ")"
+    # hardcoded reachability discovery from grid
+    reachability = grid[point_x-2:point_x+3, point_y-2:point_y+3]
+    # Initialize MCV
+    tempMCV = initMCV * reachability
+    # mask boundary
+    if boundarySwitch:
+        tempMCV = tempMCV * boundarymask
+    # add vertex and set traversal status
+    g.add_vertex(vertex, tempMCV)
+    traversal_status[vertex] = "Remaining"
 
 """    
 """
 
-
-def plan2D():
+def updateMCV2D():
 
     global previous_x
     global previous_y
     global agent_x
     global agent_y
+
+    vertex_agent = "(" + str(agent_x) + "," + str(agent_y) + ")"
+    vertex_previous = "(" + str(previous_x) + "," + str(previous_y) + ")"
+
+    tempMCV_agent = g.get_vertex_mcv(vertex_agent)
+    tempMCV_previous = g.get_vertex_mcv(vertex_previous)
+
+    bMask = np.zeros((realgrid,realgrid))
+    fMask = np.zeros((realgrid,realgrid))
+
+    bMask[agent_x-2:agent_x+3,agent_y-2:agent_y+3] = 1.0
+    fMask[previous_x-2:previous_x+3,previous_y-2:previous_y+3] = 1.0
+
+    if previous_x <= agent_x:
+        if previous_y <= agent_y:
+            bMask[previous_x:agent_x+1, previous_y:agent_y+1] = 0.0
+            fMask[previous_x:agent_x+1, previous_y:agent_y+1] = 0.0
+        else:
+            bMask[previous_x:agent_x+1, agent_y:previous_y+1] = 0.0
+            fMask[previous_x:agent_x+1, agent_y:previous_y+1] = 0.0
+    else:
+        if previous_y <= agent_y:
+            bMask[agent_x:previous_x+1, previous_y:agent_y+1] = 0.0
+            fMask[agent_x:previous_x+1, previous_y:agent_y+1] = 0.0
+        else:
+            bMask[agent_x:previous_x+1, agent_y:previous_y+1] = 0.0
+            fMask[agent_x:previous_x+1, agent_y:previous_y+1] = 0.0
+
+    bDirection = bMask[agent_x-2:agent_x+3,agent_y-2:agent_y+3]
+    fDirection = fMask[previous_x-2:previous_x+3,previous_y-2:previous_y+3]
+
+    tempMCV_agent = tempMCV_agent * bDirection
+    tempMCV_previous = tempMCV_previous * fDirection
+
+    # enable below to lower curiosity from backward direction
+    if bDirectionSwitch:
+        g.set_vertex_mcv(vertex_agent, tempMCV_agent)
+        unique = np.unique(tempMCV_agent, return_counts=True)
+        if unique[0].shape[0] == 1:
+            traversal_status[vertex_agent] = "Done"
+
+    # enable below to raise curiosity in forward direction
+    if fDirectionSwitch:
+        g.set_vertex_mcv(vertex_previous, tempMCV_previous)
+        unique = np.unique(tempMCV_previous, return_counts=True)
+        if unique[0].shape[0] == 1:
+            traversal_status[vertex_previous] = "Done"
+
+    return bMask, fMask
+
+"""    
+"""
+
+def manipulateGraph2D():
+
+    global previous_x
+    global previous_y
+    global agent_x
+    global agent_y
+
+    foundcurrent = False
+    foundprevious = False
+
+    if g.num_vertices > 0:
+        # Non Empty Graph
+        for v in g:
+            vid = v.get_id()
+
+            if vid == "("+str(previous_x)+","+str(previous_y)+")":
+                foundprevious = True
+
+            if vid == "("+str(agent_x)+","+str(agent_y)+")":
+                foundcurrent = True
+
+    if not foundcurrent:
+        initializeMCV2D(agent_x, agent_y)
+    if not foundprevious:
+        initializeMCV2D(previous_x, previous_y)
+
+    updateMCV2D()
+
+def plan2D():
+
+    global traversal_status
     global move_x
     global move_y
-    global goal_x
-    global goal_y
-    global bDirection
-    global fDirection
+    global next_x
+    global next_y
 
-    if dimensionCount == 2:
-        vertex = "(" + str(agent_x) + "," + str(agent_y) + ")"
-    elif dimensionCount == 4:
-        vertex = "(" + str(agent_x) + "," + str(agent_y) + "," + str(goal_x) + "," + str(goal_y) + ")"
+    findStatus = False
+
+    for v in traversal_status:
+        if traversal_status[v] == "Remaining":
+            findStatus = findaction(v)
+            if findStatus:
+                vertex = g.get_vertex(v)
+                vid = vertex.get_id()
+                vid = vid.split(",")
+                vidx = vid[0].split("(")
+                vidy = vid[1].split(")")
+                next_x = int(vidx[1])
+                next_y = int(vidy[0])
+                print("found non zero action at ", v, " action is ", next_x+move_x-2, next_y+move_y-2)
+                break
+        if findStatus:
+            break
+    if not findStatus:
+        print("finished building graph")
+        return True
+    return False
+
+
+
+def findaction(vertex):
+
+    global move_x
+    global move_y
 
     tempMCV = g.get_vertex_mcv(vertex)
-
     unique = np.unique(tempMCV, return_counts=True)
     best = unique[0][-1]
     count = unique[1][-1]
 
-
     # check if there are multiple curiosities to mark nodes that have all its neighbours visited
-
     if unique[0].shape[0] > 1:
         # find if highest curiosity has multiple counts
         # if yes : action random
@@ -401,41 +429,18 @@ def plan2D():
                     if tempMCV[i][j] == best:
                         searchIndex += 1
                     if searchIndex == actionIndex:
-                        move_x = i
-                        move_y = j
-                        break
-                if searchIndex == actionIndex:
-                    break
+                        move_x, move_y = i, j
+                        return True
         else:  # else  : max curiosity
             move_x, move_y = np.unravel_index(tempMCV.argmax(), tempMCV.shape)
+            return True
     else:
-        print("\nonly zero curiosity left at this node : find a connected node with non zero value")
-        for v in g:
-            if str(v.get_id()) == vertex:
-                temp = v.get_adjacent()
-                for i in range(0, len(temp)):
-                    print(temp[i])
-        exit(0)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return False
 
 """    
 """
 
-
-def initializeMCV2D(t, step):
+def buildGraph(max_steps):
 
     global previous_x
     global previous_y
@@ -443,233 +448,82 @@ def initializeMCV2D(t, step):
     global agent_y
     global move_x
     global move_y
-    global goal_x
-    global goal_y
-    global bDirection
-    global fDirection
-
-    # add this point as vertex
-    if dimensionCount == 2:
-        vertex = "(" + str(agent_x) + "," + str(agent_y) + ")"
-    elif dimensionCount == 4:
-        vertex = "(" + str(agent_x) + "," + str(agent_y) + "," + str(goal_x) + "," + str(goal_y) + ")"
-
-    # hardcoded reachability discovery from grid
-    #
-    reachability = grid[agent_x-2:agent_x+3, agent_y-2:agent_y+3]
-
-    # Initialize MCV
-    tempMCV = initMCV * reachability
-
-    # mask boundary
-    if boundarySwitch:
-        tempMCV = tempMCV * boundarymask
-
-    #print("Initialize \n",tempMCV)
-    g.add_vertex(vertex, tempMCV)
-
-
-"""    
-"""
-
-
-def updateMCV2D():
-
-    global previous_x
-    global previous_y
-    global agent_x
-    global agent_y
-    global move_x
-    global move_y
-    global goal_x
-    global goal_y
-    global bDirection
-    global fDirection
-
-    if dimensionCount == 2:
-        vertex_agent = "(" + str(agent_x) + "," + str(agent_y) + ")"
-        vertex_previous = "(" + str(previous_x) + "," + str(previous_y) + ")"
-    elif dimensionCount == 4:
-        vertex_agent = "(" + str(agent_x) + "," + str(agent_y) + "," + str(goal_x) + "," + str(goal_y) + ")"
-        vertex_previous = "(" + str(previous_x) + "," + str(previous_y) + "," + str(goal_x) + "," + str(goal_y) + ")"
-
-    tempMCV_agent = g.get_vertex_mcv(vertex_agent)
-    #print("Inside Update\n",tempMCV_agent)
-
-    tempMCV_previous = g.get_vertex_mcv(vertex_previous)
-
-    bMask = np.zeros((realgrid,realgrid))
-    fMask = np.zeros((realgrid,realgrid))
-
-    bMask[agent_x-2:agent_x+3,agent_y-2:agent_y+3] = 1.0
-    fMask[previous_x-2:previous_x+3,previous_y-2:previous_y+3] = 1.0
-
-    if previous_x <= agent_x:
-        if previous_y <= agent_y:
-            bMask[previous_x:agent_x+1, previous_y:agent_y+1] = 0.0
-            fMask[previous_x:agent_x+1, previous_y:agent_y+1] = 1.01
-        else:
-            bMask[previous_x:agent_x+1, agent_y:previous_y+1] = 0.0
-            fMask[previous_x:agent_x+1, agent_y:previous_y+1] = 1.01
-    else:
-        if previous_y <= agent_y:
-            bMask[agent_x:previous_x+1, previous_y:agent_y+1] = 0.0
-            fMask[agent_x:previous_x+1, previous_y:agent_y+1] = 1.01
-        else:
-            bMask[agent_x:previous_x+1, agent_y:previous_y+1] = 0.0
-            fMask[agent_x:previous_x+1, agent_y:previous_y+1] = 1.01
-
-    bDirection = bMask[agent_x-2:agent_x+3,agent_y-2:agent_y+3]
-    fDirection = fMask[previous_x-2:previous_x+3,previous_y-2:previous_y+3]
-
-    tempMCV_agent = tempMCV_agent * bDirection
-    #print(tempMCV_agent)
-
-    tempMCV_previous = tempMCV_previous * fDirection
-
-    # enable below to lower curiosity from backward direction
-    if bDirectionSwitch:
-        g.set_vertex_mcv(vertex_agent, tempMCV_agent)
-
-    # enable below to raise curiosity in forward direction
-    if fDirectionSwitch:
-        g.set_vertex_mcv(vertex_previous, tempMCV_previous)
-
-    return bMask, fMask
-
-
-"""    
-"""
-
-
-def manipulateGraph2D(t, step):
-
-    global previous_x
-    global previous_y
-    global agent_x
-    global agent_y
-    global move_x
-    global move_y
-    global goal_x
-    global goal_y
-    global bDirection
-    global fDirection
-
-    found = False
-
-    bDirection = np.zeros((realgrid,realgrid))
-    fDirection = np.zeros((realgrid,realgrid))
-
-    if g.num_vertices > 0:
-        # Non Empty Graph
-        found = False
-        for v in g:
-            vid = v.get_id()
-            if dimensionCount == 2 and vid == "("+str(agent_x)+","+str(agent_y)+")":
-                # node found hence update MCV and find next action
-                bDirection, fDirection = updateMCV2D()
-                found = True
-                break
-            elif dimensionCount == 4 and vid == "("+str(agent_x)+","+str(agent_y)+","+str(goal_x)+","+str(goal_y)+")":
-                # node found hence update MCV and find next action
-                bDirection, fDirection = updateMCV2D()
-                found = True
-                break
-
-    if not found or g.num_vertices == 0:
-        # node not found hence initialize MCV and find next action
-        # or started with empty graph
-        initializeMCV2D(t, step)
-
-    return bDirection, fDirection
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""    
-"""
-
-
-def rollout2D(t, max_steps):
-
-    global previous_x
-    global previous_y
-    global agent_x
-    global agent_y
-    global move_x
-    global move_y
-    global goal_x
-    global goal_y
-    global bDirection
-    global fDirection
-
-
-    # first step : initialize first node
-    #       else : check if intialization is needed or upate is needed
-    #               also add an edge
-    # plan for next node if curiosity guides
-    # else traverse to reach a node in graph with non zero curiosity
-
+    global next_x
+    global next_y
 
     for i in range(1, max_steps):
-        bDirection, fDirection = manipulateGraph2D(t, i)
 
-        # assume that a next node is found
-        # add a link from previous to this with zero value on edge
+        if i == 1:
+            initializeMCV2D(previous_x, previous_y)
 
-        if dimensionCount == 2:
-            vertex_agent = "(" + str(agent_x) + "," + str(agent_y) + ")"
-            vertex_previous = "(" + str(previous_x) + "," + str(previous_y) + ")"
-        elif dimensionCount == 4:
-            vertex_agent = "(" + str(agent_x) + "," + str(agent_y) + "," + str(goal_x) + "," + str(goal_y) + ")"
-            vertex_previous = "(" + str(previous_x) + "," + str(previous_y) + "," + str(goal_x) + "," + str(
-                goal_y) + ")"
+        status = plan2D()
+
+        if status:
+            print("all Node traversed")
+            break
+
+        previous_x = next_x
+        previous_y = next_y
+
+        agent_x = previous_x + move_x -2
+        agent_y = previous_y + move_y -2
+
+        manipulateGraph2D()
 
         if i > 1:
+            vertex_agent = "(" + str(agent_x) + "," + str(agent_y) + ")"
+            vertex_previous = "(" + str(previous_x) + "," + str(previous_y) + ")"
             g.add_edge(vertex_previous, g.get_vertex_mcv(vertex_previous), vertex_agent, g.get_vertex_mcv(vertex_agent), 1)
 
+    g.printGraph()
 
 
 
-        previous_x = agent_x
-        previous_y = agent_y
 
 
 
-        # plan to find either non zero curiosity or a connected node with non zero curiosity
-        plan2D()
-
-        #g.plotMap2D(t, i, bDirection, fDirection)
-
-        agent_x = agent_x + move_x - 2
-        agent_y = agent_y + move_y - 2
 
 
 
-        # If Goal Found
-        #if 1 < agent_x < realgrid - 2 and 1 < agent_y < realgrid - 2:
-        #    if agent_x - 3 < goal_x < agent_x + 3 and agent_y - 3 < goal_y < agent_y + 3:
-        #        break
 
-        #time.sleep(10)
+def planTrajectory():
+
+    global traversal_status
+    global move_x
+    global move_y
+    global next_x
+    global next_y
+
+    findStatus = False
+
+    for v in traversal_status:
+        if traversal_status[v] == "Remaining":
+            findStatus = findaction(v)
+            if findStatus:
+                vertex = g.get_vertex(v)
+                vid = vertex.get_id()
+                vid = vid.split(",")
+                vidx = vid[0].split("(")
+                vidy = vid[1].split(")")
+                next_x = int(vidx[1])
+                next_y = int(vidy[0])
+                print("found non zero action at ", v, " action is ", next_x+move_x-2, next_y+move_y-2)
+                break
+        if findStatus:
+            break
+    if not findStatus:
+        print("finished building graph")
+        return True
+    return False
+
+
+
 
 
 if __name__ == '__main__':
 
     max_episode = 1
-    max_steps = 100
+    max_steps = 1000
 
     # ###################################################################################
     # ################################### IMPORTANT #####################################
@@ -679,14 +533,29 @@ if __name__ == '__main__':
     boundarySwitch = True
 
     # enable below to update (Raise) MCV for previous position in the direction of movement
-    fDirectionSwitch = False
+    fDirectionSwitch = True
 
     # enable below to update (Lower) MCV for current position from the direction of movement
-    bDirectionSwitch = True
+    bDirectionSwitch = False
 
-    dimensionCount = 2
 
-    # Trial
+
+    #agent_x, agent_y = randomValidPoint("FullGrid")
+    agent_x, agent_y = 2,2
+    goal_x, goal_y = randomValidPoint("SmallGrid")
+
+    # set history at initilisation
+    previous_x, previous_y = agent_x, agent_y
+
+    # return when goal is found or 1000 steps
+    buildGraph(max_steps)
+    g.plotGraph()
+    g.printGraph()
+
+
+
+
+
     for t in trange(0, max_episode):
         if dimensionCount == 2:
             if not os.path.exists("2d/"+str(t)):
@@ -695,19 +564,11 @@ if __name__ == '__main__':
             if not os.path.exists("4d/"+str(t)):
                 os.makedirs("4d/"+str(t))
 
-        # Initialize agent and Goal
-        #
-        # (SmallGrid (fixed samples of start and goal points; required to test 4D(start and goal, x and y)) /
-        #
-        # FullGrid (start and goal point sampling from any valid point))
-        #
         agent_x, agent_y = randomValidPoint("FullGrid")
-        goal_x, goal_y = randomValidPoint("SmallGrid")
+        goal_x, goal_y = randomValidPoint("FullGrid")
 
         # set history at initilisation
         previous_x, previous_y = agent_x, agent_y
 
         # return when goal is found or 1000 steps
-        rollout2D(t, max_steps)
-
-        g.printGraph()
+        trajectory = planTrajectory()
