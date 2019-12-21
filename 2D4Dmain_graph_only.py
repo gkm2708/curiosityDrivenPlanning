@@ -48,6 +48,7 @@ class Graph:
         return iter(self.vert_dict.values())
 
     def add_vertex(self, node, mat):
+        print("add vertex ",node)
         self.num_vertices = self.num_vertices + 1
         new_vertex = Vertex(node, mat)
         self.vert_dict[node] = new_vertex
@@ -75,7 +76,7 @@ class Graph:
             self.add_vertex(to, to_mat)
 
         self.vert_dict[frm].add_neighbor(self.vert_dict[to], cost)
-        #self.vert_dict[to].add_neighbor(self.vert_dict[frm], cost)
+        self.vert_dict[to].add_neighbor(self.vert_dict[frm], cost)
 
     def get_vertices(self):
         return self.vert_dict.keys()
@@ -161,6 +162,57 @@ class Graph:
                         imageExpanded[i * 7 + ii][j * 7 + jj] = imageMCV[i][j]
 
         cv2.imwrite("2d/trajectory_map_"+str(t)+".png", imageExpanded)
+
+
+    def plotGraphBuilding(self, t):
+
+        imageGrid = np.asarray([[0 if item == 0 else 255 for item in row] for row in grid])
+        imagemotion = np.asarray([[0 if item == 0 else 255 for item in row] for row in grid])
+
+        imageMCV = np.zeros((realgrid,realgrid))
+        imageFog = np.zeros((realgrid, realgrid))
+
+        #imageFull = np.zeros((realgrid*2,realgrid*2))
+
+        imageExpanded = np.zeros((realgrid*2*7,realgrid*2*7))
+
+        # real maze
+        # uncovered fovea
+        # sampled points
+
+        for v in g:
+
+            vid = v.get_id()
+            vid = vid.split(",")
+
+            vidx = vid[0].split("(")
+            vidy = vid[1].split(")")
+
+            x = int(vidx[1])
+            y = int(vidy[0])
+
+            imageMCV[x][y] = 100
+
+            imageFog[x-2:x+3,y-2:y+3] = imageGrid[x-2:x+3,y-2:y+3]
+
+        imagemotion[previous_x, previous_y] = 200
+        imagemotion[agent_x, agent_y] = 100
+
+        #print(fog)
+
+        imageFull = np.concatenate([
+            np.concatenate([imageMCV, imagemotion], axis=1),
+            np.concatenate([[[0 if item == 0 else 255 for item in line] for line in fog], imageFog], axis=1)
+        ], axis=0)
+
+        for i in range(0, imageFull.shape[0]):
+            for ii in range(0, 7):
+                for j in range(0, imageFull.shape[1]):
+                    for jj in range(0, 7):
+                        imageExpanded[i * 7 + ii][j * 7 + jj] = imageFull[i][j]
+
+        cv2.imwrite("2d/generated_map_"+str(t)+".png", imageExpanded)
+
 
 
 def randomValidPoint(grid_type):
@@ -293,6 +345,11 @@ reachability = np.zeros((5, 5))
 traversal_status = {}
 graph = {}
 
+#fog = np.empty_like(grid)
+#fog[:,:] = grid[:,:]
+
+fog = np.zeros((realgrid, realgrid))
+
 boundarySwitch = False
 fDirectionSwitch = False
 bDirectionSwitch = False
@@ -323,6 +380,8 @@ def floodfill(x, y):
 
 def initializeMCV2D(point_x, point_y):
 
+    #only if it uncovers new reachable area
+
     global traversal_status
     global boundarySwitch
     global reachability
@@ -351,20 +410,42 @@ def initializeMCV2D(point_x, point_y):
 
     reachability = np.asarray([[1 if item == 2 else 0 for item in row] for row in reachability])
 
-    #print("After \n",reachability)
+    temp = np.empty_like(fog)
+    temp[:,:] = fog[:,:]
 
+    for i in range(0,5):
+        for j in range(0,5):
+            if reachability[i,j] == 1:
+                temp[point_x-2+i,point_y-2+j] = reachability[i,j]
 
-    # Initialize MCV
-    tempMCV = initMCV * reachability
-    print(tempMCV)
-    # mask boundary
-    if boundarySwitch:
-        tempMCV = tempMCV * boundarymask
-    print(tempMCV)
-    # add vertex and set traversal status
-    g.add_vertex(vertex, tempMCV)
-    traversal_status[vertex] = "Remaining"
+    #temp[point_x-2:point_x+3, point_y-2:point_y+3] = reachability[:,:]
 
+    #print(fog)
+    #print(reachability)
+    #print(temp)
+
+    #if temp.all() == fog.all():
+
+    if np.array_equal(temp, fog):
+        print("No new area uncovered")
+    else:
+
+        print(fog)
+        print(temp)
+
+        fog[:,:] = temp[:,:]
+        #print("After \n",reachability)
+
+        # Initialize MCV
+        tempMCV = initMCV * reachability
+        #print(tempMCV)
+        # mask boundary
+        if boundarySwitch:
+            tempMCV = tempMCV * boundarymask
+        #print(tempMCV)
+        # add vertex and set traversal status
+        g.add_vertex(vertex, tempMCV)
+        traversal_status[vertex] = "Remaining"
 
 
 """    
@@ -380,14 +461,11 @@ def updateMCV2D():
     vertex_agent = "(" + str(agent_x) + "," + str(agent_y) + ")"
     vertex_previous = "(" + str(previous_x) + "," + str(previous_y) + ")"
 
-    tempMCV_agent = g.get_vertex_mcv(vertex_agent)
-    tempMCV_previous = g.get_vertex_mcv(vertex_previous)
+    bMask = np.ones((realgrid,realgrid))
+    fMask = np.ones((realgrid,realgrid))
 
-    bMask = np.zeros((realgrid,realgrid))
-    fMask = np.zeros((realgrid,realgrid))
-
-    bMask[agent_x-2:agent_x+3,agent_y-2:agent_y+3] = 1.0
-    fMask[previous_x-2:previous_x+3,previous_y-2:previous_y+3] = 1.0
+    #bMask[agent_x-2:agent_x+3,agent_y-2:agent_y+3] = 1.0
+    #fMask[previous_x-2:previous_x+3,previous_y-2:previous_y+3] = 1.0
 
     if previous_x <= agent_x:
         if previous_y <= agent_y:
@@ -404,26 +482,33 @@ def updateMCV2D():
             bMask[agent_x:previous_x+1, agent_y:previous_y+1] = 0.0
             fMask[agent_x:previous_x+1, agent_y:previous_y+1] = 0.0
 
-    bDirection = bMask[agent_x-2:agent_x+3,agent_y-2:agent_y+3]
-    fDirection = fMask[previous_x-2:previous_x+3,previous_y-2:previous_y+3]
+    tempMCV_agent = g.get_vertex_mcv(vertex_agent)
+    tempMCV_previous = g.get_vertex_mcv(vertex_previous)
 
-    tempMCV_agent = tempMCV_agent * bDirection
-    tempMCV_previous = tempMCV_previous * fDirection
+    #print("from updateMCV",tempMCV_agent)
+    #print("from updateMCV",tempMCV_previous)
 
     # enable below to lower curiosity from backward direction
-    if bDirectionSwitch:
+    if bDirectionSwitch and type(tempMCV_agent) is np.ndarray:
+        print("from agent updateMCV \n",tempMCV_agent)
+        bDirection = bMask[agent_x-2:agent_x+3,agent_y-2:agent_y+3]
+        tempMCV_agent = tempMCV_agent * bDirection
         g.set_vertex_mcv(vertex_agent, tempMCV_agent)
         unique = np.unique(tempMCV_agent, return_counts=True)
         if unique[0].shape[0] == 1:
             traversal_status[vertex_agent] = "Done"
 
     # enable below to raise curiosity in forward direction
-    if fDirectionSwitch:
+    if fDirectionSwitch and type(tempMCV_previous) is np.ndarray:
+        print("from previous updateMCV \n",tempMCV_previous)
+        fDirection = fMask[previous_x-2:previous_x+3,previous_y-2:previous_y+3]
+        tempMCV_previous = tempMCV_previous * fDirection
         g.set_vertex_mcv(vertex_previous, tempMCV_previous)
         unique = np.unique(tempMCV_previous, return_counts=True)
         if unique[0].shape[0] == 1:
             traversal_status[vertex_previous] = "Done"
 
+    print("last checkpoint")
     return bMask, fMask
 
 """    
@@ -451,8 +536,10 @@ def manipulateGraph2D():
                 foundcurrent = True
 
     if not foundcurrent:
+        print("initialize agent")
         initializeMCV2D(agent_x, agent_y)
     if not foundprevious:
+        print("initialize previous")
         initializeMCV2D(previous_x, previous_y)
 
     updateMCV2D()
@@ -536,6 +623,8 @@ def buildGraph(max_steps):
 
     for i in range(1, max_steps):
 
+        g.plotGraphBuilding(i)
+
         if i == 1:
             initializeMCV2D(previous_x, previous_y)
 
@@ -553,7 +642,19 @@ def buildGraph(max_steps):
 
         manipulateGraph2D()
 
-        if i > 1:
+        foundcurrent = False
+        foundprevious = False
+
+        for v in g:
+            vid = v.get_id()
+
+            if vid == "("+str(previous_x)+","+str(previous_y)+")":
+                foundprevious = True
+
+            if vid == "("+str(agent_x)+","+str(agent_y)+")":
+                foundcurrent = True
+
+        if i > 1 and foundprevious and foundcurrent:
             vertex_agent = "(" + str(agent_x) + "," + str(agent_y) + ")"
             vertex_previous = "(" + str(previous_x) + "," + str(previous_y) + ")"
             g.add_edge(vertex_previous, g.get_vertex_mcv(vertex_previous), vertex_agent, g.get_vertex_mcv(vertex_agent), 1)
@@ -667,7 +768,7 @@ def planTrajectory():
 
 if __name__ == '__main__':
 
-    max_episode = 1000
+    max_episode = 10
     max_steps = 1000
 
     # ###################################################################################
@@ -675,13 +776,13 @@ if __name__ == '__main__':
     # ###################################################################################
     # enable below for boundary mask
     # needed one time, afterwards in update inner values are zero, so nothing matters
-    boundarySwitch = False
+    boundarySwitch = True
 
     # enable below to update (Raise) MCV for previous position in the direction of movement
     fDirectionSwitch = True
 
     # enable below to update (Lower) MCV for current position from the direction of movement
-    bDirectionSwitch = False
+    bDirectionSwitch = True
 
 
 
@@ -694,7 +795,7 @@ if __name__ == '__main__':
 
     # return when goal is found or 1000 steps
     buildGraph(max_steps)
-    g.plotGraph()
+    #g.plotGraph()
     #g.printGraph()
 
 
