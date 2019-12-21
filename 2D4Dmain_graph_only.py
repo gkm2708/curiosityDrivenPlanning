@@ -48,7 +48,6 @@ class Graph:
         return iter(self.vert_dict.values())
 
     def add_vertex(self, node, mat):
-        print("add vertex ",node)
         self.num_vertices = self.num_vertices + 1
         new_vertex = Vertex(node, mat)
         self.vert_dict[node] = new_vertex
@@ -105,7 +104,6 @@ class Graph:
     def plotGraph(self):
 
         imageMCV = np.zeros((realgrid,realgrid))
-        imageGridFull = np.zeros((realgrid*2,realgrid*2))
 
         imageExpanded = np.zeros((realgrid*7,realgrid*2*7))
 
@@ -122,7 +120,6 @@ class Graph:
 
             imageMCV[x][y] = 255
 
-        #temp = [[0 if item == 0 else 255 for item in row] for row in grid]
         imageGridFull = np.concatenate([imageMCV, [[0 if item == 0 else 255 for item in row] for row in grid]], axis=1)
 
         for i in range(0, imageGridFull.shape[0]):
@@ -172,13 +169,7 @@ class Graph:
         imageMCV = np.zeros((realgrid,realgrid))
         imageFog = np.zeros((realgrid, realgrid))
 
-        #imageFull = np.zeros((realgrid*2,realgrid*2))
-
         imageExpanded = np.zeros((realgrid*2*7,realgrid*2*7))
-
-        # real maze
-        # uncovered fovea
-        # sampled points
 
         for v in g:
 
@@ -197,8 +188,6 @@ class Graph:
 
         imagemotion[previous_x, previous_y] = 200
         imagemotion[agent_x, agent_y] = 100
-
-        #print(fog)
 
         imageFull = np.concatenate([
             np.concatenate([imageMCV, imagemotion], axis=1),
@@ -344,10 +333,6 @@ fDirection = np.zeros((realgrid, realgrid))
 reachability = np.zeros((5, 5))
 traversal_status = {}
 graph = {}
-
-#fog = np.empty_like(grid)
-#fog[:,:] = grid[:,:]
-
 fog = np.zeros((realgrid, realgrid))
 
 boundarySwitch = False
@@ -392,21 +377,14 @@ def initializeMCV2D(point_x, point_y):
     print(point_x, point_y)
 
     # hardcoded reachability discovery from grid
-    #print("Before \n",reachability)
-
     reachability = np.zeros((5, 5))
-    #print("Before \n",reachability)
-
 
     tempGrid = np.empty_like(grid)
     tempGrid[:] = grid
 
     reachability = np.asarray(tempGrid[point_x-2:point_x+3, point_y-2:point_y+3])
-    #print("Before \n",reachability)
-    #print("Before \n", grid)
 
     floodfill(2, 2)
-    #print("After \n",reachability)
 
     reachability = np.asarray([[1 if item == 2 else 0 for item in row] for row in reachability])
 
@@ -418,14 +396,6 @@ def initializeMCV2D(point_x, point_y):
             if reachability[i,j] == 1:
                 temp[point_x-2+i,point_y-2+j] = reachability[i,j]
 
-    #temp[point_x-2:point_x+3, point_y-2:point_y+3] = reachability[:,:]
-
-    #print(fog)
-    #print(reachability)
-    #print(temp)
-
-    #if temp.all() == fog.all():
-
     if np.array_equal(temp, fog):
         print("No new area uncovered")
     else:
@@ -434,15 +404,12 @@ def initializeMCV2D(point_x, point_y):
         print(temp)
 
         fog[:,:] = temp[:,:]
-        #print("After \n",reachability)
 
         # Initialize MCV
         tempMCV = initMCV * reachability
-        #print(tempMCV)
         # mask boundary
         if boundarySwitch:
             tempMCV = tempMCV * boundarymask
-        #print(tempMCV)
         # add vertex and set traversal status
         g.add_vertex(vertex, tempMCV)
         traversal_status[vertex] = "Remaining"
@@ -464,9 +431,6 @@ def updateMCV2D():
     bMask = np.ones((realgrid,realgrid))
     fMask = np.ones((realgrid,realgrid))
 
-    #bMask[agent_x-2:agent_x+3,agent_y-2:agent_y+3] = 1.0
-    #fMask[previous_x-2:previous_x+3,previous_y-2:previous_y+3] = 1.0
-
     if previous_x <= agent_x:
         if previous_y <= agent_y:
             bMask[previous_x:agent_x+1, previous_y:agent_y+1] = 0.0
@@ -484,9 +448,6 @@ def updateMCV2D():
 
     tempMCV_agent = g.get_vertex_mcv(vertex_agent)
     tempMCV_previous = g.get_vertex_mcv(vertex_previous)
-
-    #print("from updateMCV",tempMCV_agent)
-    #print("from updateMCV",tempMCV_previous)
 
     # enable below to lower curiosity from backward direction
     if bDirectionSwitch and type(tempMCV_agent) is np.ndarray:
@@ -565,7 +526,6 @@ def plan2D():
                 vidy = vid[1].split(")")
                 next_x = int(vidx[1])
                 next_y = int(vidy[0])
-                #print("found non zero action at ", v, " action is ", next_x+move_x-2, next_y+move_y-2)
                 break
         if findStatus:
             break
@@ -659,8 +619,6 @@ def buildGraph(max_steps):
             vertex_previous = "(" + str(previous_x) + "," + str(previous_y) + ")"
             g.add_edge(vertex_previous, g.get_vertex_mcv(vertex_previous), vertex_agent, g.get_vertex_mcv(vertex_agent), 1)
 
-    #g.printGraph()
-
 
 
 
@@ -696,7 +654,6 @@ def planTrajectory():
     trajectory = []
 
     keys = graph.keys()
-    #print("KEYS\n", keys)
 
     startDistanceMin = 100
     goalDistanceMin = 100
@@ -743,7 +700,6 @@ def planTrajectory():
                 min_val = path[key_min]
         cur = key_min
         queue.remove(cur)
-        #print(cur)
 
         for i in graph[cur]:
             alternate = graph[cur][i] + path[cur]
@@ -784,25 +740,17 @@ if __name__ == '__main__':
     # enable below to update (Lower) MCV for current position from the direction of movement
     bDirectionSwitch = True
 
-
-
     agent_x, agent_y = randomValidPoint("FullGrid")
-    #agent_x, agent_y = 2,2
-    #goal_x, goal_y = randomValidPoint("SmallGrid")
 
     # set history at initilisation
     previous_x, previous_y = agent_x, agent_y
 
     # return when goal is found or 1000 steps
     buildGraph(max_steps)
-    #g.plotGraph()
-    #g.printGraph()
-
 
     initial_graph()
 
     print("GRAPH\n", graph)
-
 
     for t in trange(0, max_episode):
 
@@ -816,5 +764,4 @@ if __name__ == '__main__':
         trajectory = planTrajectory()
         print("The path between ", "(" + str(agent_x) + "," + str(agent_y) + ")", " to ",
               "(" + str(goal_x) + "," + str(goal_y) + ")", trajectory)
-        #print(trajectory)
         g.plotTrajectory(trajectory, t)
