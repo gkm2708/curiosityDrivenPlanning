@@ -7,6 +7,102 @@ import cv2
 import math
 np.set_printoptions(threshold=np.inf)
 
+
+
+# initialize grid
+"""
+grid = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,1,0,0,1,0,0,1,1,1,1,0,0],
+                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
+                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
+                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
+                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
+                [0,0,1,0,0,1,1,1,1,0,0,1,0,0],
+                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
+                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
+                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
+                [0,0,1,1,1,1,0,0,1,0,0,1,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
+"""
+
+
+
+grid = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,1,1,1,1,1,1,1,1,1,1,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,0,0,1,0,0,0,0,1,0,0,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
+                [0,0,1,1,1,1,1,1,1,1,1,1,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
+
+"""
+# initialize grid
+smallGrid = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,1,0,0,1,0,0,1,1,1,1,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,1,1,1,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,1,1,1,1,0,0,1,0,0,1,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
+                    
+"""
+
+smallGrid = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,1,1,1,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
+
+
+boundarymask = np.array([[1, 1, 1, 1, 1],
+                        [1, 0, 0, 0, 1],
+                        [1, 0, 0, 0, 1],
+                        [1, 0, 0, 0, 1],
+                        [1, 1, 1, 1, 1]])
+
+"""
+initMCV = np.array([[1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1]])
+                    
+"""
+
+initMCV = np.array([[255, 255, 255, 255, 255],
+                    [255, 255, 255, 255, 255],
+                    [255, 255, 255, 255, 255],
+                    [255, 255, 255, 255, 255],
+                    [255, 255, 255, 255, 255]])
+
+
+
+
 """ ###################### VERTEX ####################"""
 
 class Vertex:
@@ -87,7 +183,6 @@ class Graph:
             for w in v.get_connections():
                 vid = v.get_id()
                 wid = w.get_id()
-                #print('( %s , %s, %3d)'  % ( vid, wid, v.get_weight(w)))
                 print('( %s , %s, %s)'  % ( vid, wid, v.get_weight(w)))
         #"""
 
@@ -112,11 +207,8 @@ class Graph:
             vid = v.get_id()
             vid = vid.split(",")
 
-            vidx = vid[0].split("(")
-            vidy = vid[1].split(")")
-
-            x = int(vidx[1])
-            y = int(vidy[0])
+            vidx, vidy = vid[0].split("("), vid[1].split(")")
+            x, y = int(vidx[1]), int(vidy[0])
 
             imageMCV[x][y] = 255
 
@@ -130,7 +222,6 @@ class Graph:
 
         cv2.imwrite("2d/curiosity_map.png", imageExpanded)
 
-
     def plotTrajectory(self, trajectory, t):
 
         imageMCV = np.asarray([[0 if item == 0 else 255 for item in row] for row in grid])
@@ -141,11 +232,8 @@ class Graph:
 
             vid = v.split(",")
 
-            vidx = vid[0].split("(")
-            vidy = vid[1].split(")")
-
-            x = int(vidx[1])
-            y = int(vidy[0])
+            vidx, vidy = vid[0].split("("), vid[1].split(")")
+            x, y = int(vidx[1]), int(vidy[0])
 
             imageMCV[x][y] = 100
 
@@ -159,7 +247,6 @@ class Graph:
                         imageExpanded[i * 7 + ii][j * 7 + jj] = imageMCV[i][j]
 
         cv2.imwrite("2d/trajectory_map_"+str(t)+".png", imageExpanded)
-
 
     def plotGraphBuilding(self, t):
 
@@ -176,11 +263,8 @@ class Graph:
             vid = v.get_id()
             vid = vid.split(",")
 
-            vidx = vid[0].split("(")
-            vidy = vid[1].split(")")
-
-            x = int(vidx[1])
-            y = int(vidy[0])
+            vidx, vidy = vid[0].split("("), vid[1].split(")")
+            x, y = int(vidx[1]), int(vidy[0])
 
             imageMCV[x][y] = 100
 
@@ -202,6 +286,27 @@ class Graph:
 
         cv2.imwrite("2d/generated_map_"+str(t)+".png", imageExpanded)
 
+g = Graph()
+
+realgrid = grid.shape[0]
+
+agent_x, agent_y = 0, 0
+move_x, move_y = 0, 0
+goal_x, goal_y = 0, 0
+previous_x, previous_y = 0, 0
+next_x, next_y = 0, 0
+
+bDirection = np.zeros((realgrid, realgrid))
+fDirection = np.zeros((realgrid, realgrid))
+fog = np.zeros((realgrid, realgrid))
+reachability = np.zeros((5, 5))
+
+traversal_status = {}
+graph = {}
+
+boundarySwitch = False
+fDirectionSwitch = False
+bDirectionSwitch = False
 
 
 def randomValidPoint(grid_type):
@@ -216,141 +321,20 @@ def randomValidPoint(grid_type):
         while grid[x][y] == 0:
             x = random.randint(1, realgrid - 2)
             y = random.randint(1, realgrid - 2)
-
     return x, y
 
 
 
-
-
-
-
-
-g = Graph()
-
-# initialize grid
-"""
-grid = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                [0,0,1,0,0,1,0,0,1,1,1,1,0,0],
-                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
-                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
-                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
-                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
-                [0,0,1,0,0,1,1,1,1,0,0,1,0,0],
-                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
-                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
-                [0,0,1,0,0,1,0,0,1,0,0,1,0,0],
-                [0,0,1,1,1,1,0,0,1,0,0,1,0,0],
-                [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
-"""
-
-
-
-grid = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                [0,0,1,1,1,1,1,1,1,1,1,1,0,0],
-                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
-                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
-                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
-                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
-                [0,0,0,0,1,0,0,0,0,1,0,0,0,0],
-                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
-                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
-                [0,0,1,0,1,1,0,0,1,1,0,1,0,0],
-                [0,0,1,1,1,1,1,1,1,1,1,1,0,0],
-                [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
-
-"""
-# initialize grid
-smallGrid = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,1,0,0,1,0,0,1,1,1,1,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,1,1,1,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,1,1,1,1,0,0,1,0,0,1,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
-                    
-"""
-
-smallGrid = np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,1,1,1,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
-
-
-
-realgrid = grid.shape[0]
-
-boundarymask = np.array([[1, 1, 1, 1, 1],
-                        [1, 0, 0, 0, 1],
-                        [1, 0, 0, 0, 1],
-                        [1, 0, 0, 0, 1],
-                        [1, 1, 1, 1, 1]])
-
-"""
-initMCV = np.array([[1, 1, 1, 1, 1],
-                    [1, 1, 1, 1, 1],
-                    [1, 1, 1, 1, 1],
-                    [1, 1, 1, 1, 1],
-                    [1, 1, 1, 1, 1]])
-                    
-"""
-
-initMCV = np.array([[255, 255, 255, 255, 255],
-                    [255, 255, 255, 255, 255],
-                    [255, 255, 255, 255, 255],
-                    [255, 255, 255, 255, 255],
-                    [255, 255, 255, 255, 255]])
-
-
-agent_x, agent_y = 0, 0
-move_x, move_y = 0, 0
-goal_x, goal_y = 0, 0
-previous_x, previous_y = 0, 0
-next_x, next_y = 0, 0
-bDirection = np.zeros((realgrid, realgrid))
-fDirection = np.zeros((realgrid, realgrid))
-reachability = np.zeros((5, 5))
-traversal_status = {}
-graph = {}
-fog = np.zeros((realgrid, realgrid))
-
-boundarySwitch = False
-fDirectionSwitch = False
-bDirectionSwitch = False
-
-"""    
-"""
-
+# ####################################################################################################
+# ###################################### BUILD GRAPH #################################################
+# ####################################################################################################
 
 def floodfill(x, y):
 
     global reachability
 
-    #"hidden" stop clause - not reinvoking for "c" or "b", only for "a".
     if reachability[x][y] == 1:
         reachability[x][y] = 2
-        #recursively invoke flood fill on all surrounding cells:
         if x > 0:
             floodfill(x-1,y)
         if x < len(reachability[y]) - 1:
@@ -361,20 +345,11 @@ def floodfill(x, y):
             floodfill(x,y+1)
 
 
-
-
 def initializeMCV2D(point_x, point_y):
-
-    #only if it uncovers new reachable area
 
     global traversal_status
     global boundarySwitch
     global reachability
-
-    # add this point as vertex
-    vertex = "(" + str(point_x) + "," + str(point_y) + ")"
-
-    print(point_x, point_y)
 
     # hardcoded reachability discovery from grid
     reachability = np.zeros((5, 5))
@@ -399,24 +374,20 @@ def initializeMCV2D(point_x, point_y):
     if np.array_equal(temp, fog):
         print("No new area uncovered")
     else:
-
-        print(fog)
-        print(temp)
-
         fog[:,:] = temp[:,:]
 
-        # Initialize MCV
+        # start with fog clearence due to this
+
+        # Initialize MCV and mask boundary
         tempMCV = initMCV * reachability
-        # mask boundary
         if boundarySwitch:
             tempMCV = tempMCV * boundarymask
+
         # add vertex and set traversal status
+        vertex = "(" + str(point_x) + "," + str(point_y) + ")"
         g.add_vertex(vertex, tempMCV)
         traversal_status[vertex] = "Remaining"
 
-
-"""    
-"""
 
 def updateMCV2D():
 
@@ -428,8 +399,7 @@ def updateMCV2D():
     vertex_agent = "(" + str(agent_x) + "," + str(agent_y) + ")"
     vertex_previous = "(" + str(previous_x) + "," + str(previous_y) + ")"
 
-    bMask = np.ones((realgrid,realgrid))
-    fMask = np.ones((realgrid,realgrid))
+    bMask, fMask = np.ones((realgrid,realgrid)), np.ones((realgrid,realgrid))
 
     if previous_x <= agent_x:
         if previous_y <= agent_y:
@@ -451,7 +421,6 @@ def updateMCV2D():
 
     # enable below to lower curiosity from backward direction
     if bDirectionSwitch and type(tempMCV_agent) is np.ndarray:
-        print("from agent updateMCV \n",tempMCV_agent)
         bDirection = bMask[agent_x-2:agent_x+3,agent_y-2:agent_y+3]
         tempMCV_agent = tempMCV_agent * bDirection
         g.set_vertex_mcv(vertex_agent, tempMCV_agent)
@@ -461,7 +430,6 @@ def updateMCV2D():
 
     # enable below to raise curiosity in forward direction
     if fDirectionSwitch and type(tempMCV_previous) is np.ndarray:
-        print("from previous updateMCV \n",tempMCV_previous)
         fDirection = fMask[previous_x-2:previous_x+3,previous_y-2:previous_y+3]
         tempMCV_previous = tempMCV_previous * fDirection
         g.set_vertex_mcv(vertex_previous, tempMCV_previous)
@@ -469,11 +437,8 @@ def updateMCV2D():
         if unique[0].shape[0] == 1:
             traversal_status[vertex_previous] = "Done"
 
-    print("last checkpoint")
     return bMask, fMask
 
-"""    
-"""
 
 def manipulateGraph2D():
 
@@ -482,28 +447,19 @@ def manipulateGraph2D():
     global agent_x
     global agent_y
 
-    foundcurrent = False
-    foundprevious = False
+    foundcurrent, foundprevious = False, False
 
     if g.num_vertices > 0:
         # Non Empty Graph
         for v in g:
             vid = v.get_id()
-
-            if vid == "("+str(previous_x)+","+str(previous_y)+")":
-                foundprevious = True
-
-            if vid == "("+str(agent_x)+","+str(agent_y)+")":
-                foundcurrent = True
-
-    if not foundcurrent:
-        print("initialize agent")
-        initializeMCV2D(agent_x, agent_y)
-    if not foundprevious:
-        print("initialize previous")
-        initializeMCV2D(previous_x, previous_y)
+            if vid == "("+str(previous_x)+","+str(previous_y)+")": foundprevious = True
+            if vid == "("+str(agent_x)+","+str(agent_y)+")": foundcurrent = True
+    if not foundcurrent: initializeMCV2D(agent_x, agent_y)
+    if not foundprevious: initializeMCV2D(previous_x, previous_y)
 
     updateMCV2D()
+
 
 def plan2D():
 
@@ -522,10 +478,9 @@ def plan2D():
                 vertex = g.get_vertex(v)
                 vid = vertex.get_id()
                 vid = vid.split(",")
-                vidx = vid[0].split("(")
-                vidy = vid[1].split(")")
-                next_x = int(vidx[1])
-                next_y = int(vidy[0])
+
+                vidx, vidy = vid[0].split("("), vid[1].split(")")
+                next_x, next_y = int(vidx[1]), int(vidy[0])
                 break
         if findStatus:
             break
@@ -533,7 +488,6 @@ def plan2D():
         print("finished building graph")
         return True
     return False
-
 
 
 def findaction(vertex):
@@ -548,9 +502,6 @@ def findaction(vertex):
 
     # check if there are multiple curiosities to mark nodes that have all its neighbours visited
     if unique[0].shape[0] > 1:
-        # find if highest curiosity has multiple counts
-        # if yes : action random
-        # acts as a tiebreaker for initialized MCV and randomize exact move in the direction
         if count > 1:
             searchIndex = 0
             actionIndex = random.randint(1, count)
@@ -561,14 +512,13 @@ def findaction(vertex):
                     if searchIndex == actionIndex:
                         move_x, move_y = i, j
                         return True
+                    return False
         else:  # else  : max curiosity
             move_x, move_y = np.unravel_index(tempMCV.argmax(), tempMCV.shape)
             return True
     else:
         return False
 
-"""    
-"""
 
 def buildGraph(max_steps):
 
@@ -594,37 +544,32 @@ def buildGraph(max_steps):
             print("all Node traversed")
             break
 
-        previous_x = next_x
-        previous_y = next_y
-
-        agent_x = previous_x + move_x -2
-        agent_y = previous_y + move_y -2
+        previous_x, previous_y = next_x, next_y
+        agent_x, agent_y = previous_x + move_x -2, previous_y + move_y -2
 
         manipulateGraph2D()
 
-        foundcurrent = False
-        foundprevious = False
+        foundcurrent, foundprevious = False, False
 
         for v in g:
             vid = v.get_id()
 
-            if vid == "("+str(previous_x)+","+str(previous_y)+")":
-                foundprevious = True
-
-            if vid == "("+str(agent_x)+","+str(agent_y)+")":
-                foundcurrent = True
+            if vid == "("+str(previous_x)+","+str(previous_y)+")": foundprevious = True
+            if vid == "("+str(agent_x)+","+str(agent_y)+")": foundcurrent = True
 
         if i > 1 and foundprevious and foundcurrent:
             vertex_agent = "(" + str(agent_x) + "," + str(agent_y) + ")"
             vertex_previous = "(" + str(previous_x) + "," + str(previous_y) + ")"
             g.add_edge(vertex_previous, g.get_vertex_mcv(vertex_previous), vertex_agent, g.get_vertex_mcv(vertex_agent), 1)
 
+# ####################################################################################################
+# ####################################################################################################
+# ####################################################################################################
 
 
-
-
-
-
+# ####################################################################################################
+# ########################################### PLAN TRAJECTORY ########################################
+# ####################################################################################################
 def initial_graph():
 
     global graph
@@ -638,7 +583,6 @@ def initial_graph():
         graph[vid] = temp
 
 
-
 def planTrajectory():
 
     global traversal_status
@@ -650,38 +594,33 @@ def planTrajectory():
 
     path = {}
     adj_node = {}
+
     queue = []
     trajectory = []
 
     keys = graph.keys()
 
-    startDistanceMin = 100
-    goalDistanceMin = 100
-    initial = ''
-    x = ''
+    startDistanceMin, goalDistanceMin = 100, 100
+    initial, x = '', ''
 
     # find nearest neighbour to the start and goal position
     for key in keys:
         temp = key.split(",")
-        temp_x = temp[0].split("(")
-        key_x = int(temp_x[1])
-        temp_y = temp[1].split(")")
-        key_y = int(temp_y[0])
+
+        temp_x, temp_y = temp[0].split("("), temp[1].split(")")
+        key_x, key_y = int(temp_x[1]), int(temp_y[0])
 
         startDistance = math.sqrt((agent_x-key_x)*(agent_x-key_x) + (agent_y-key_y)*(agent_y-key_y))
         goalDistance = math.sqrt((goal_x-key_x)*(goal_x-key_x) + (goal_y-key_y)*(goal_y-key_y))
 
         if startDistance < startDistanceMin:
             # set it as initial
-            initial = key
-            startDistanceMin = startDistance
+            initial, startDistanceMin = key, startDistance
         if goalDistance < goalDistanceMin:
             # set it as terminal
-            x = key
-            goalDistanceMin = goalDistance
+            x, goalDistanceMin = key, goalDistance
 
     print("initial point ", initial, startDistanceMin, " goal point ", x, goalDistanceMin)
-
 
     for node in graph:
         path[node] = float("inf")
@@ -718,14 +657,18 @@ def planTrajectory():
 
     return trajectory
 
+# ####################################################################################################
+# ####################################################################################################
+# ####################################################################################################
 
 
-
+# ####################################################################################################
+# ############################################## MAIN ################################################
+# ####################################################################################################
 
 if __name__ == '__main__':
 
-    max_episode = 10
-    max_steps = 1000
+    max_episode, max_steps = 10, 1000
 
     # ###################################################################################
     # ################################### IMPORTANT #####################################
